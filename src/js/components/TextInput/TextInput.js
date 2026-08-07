@@ -90,6 +90,7 @@ const TextInput = forwardRef(
       name,
       onBlur,
       onChange,
+      onClickCopy: onClickCopyProp,
       onFocus,
       onKeyDown,
       onSelect,
@@ -98,6 +99,7 @@ const TextInput = forwardRef(
       onSuggestionsOpen,
       placeholder,
       plain,
+      showCopyButton,
       showPasswordToggle,
       readOnly: readOnlyProp,
       readOnlyCopy,
@@ -160,8 +162,12 @@ const TextInput = forwardRef(
       messages,
     });
 
-    const onClickCopy = () => {
-      navigator.clipboard.writeText(value);
+    const onClickCopy = async () => {
+      // Preserve the built-in tip + announce flow even when consumers own the
+      // actual copy action for masked or ephemeral secrets.
+      if (onClickCopyProp) await onClickCopyProp();
+      else await navigator.clipboard.writeText(value ?? '');
+
       announce(readOnlyCopyValidation, 'assertive');
       setTip(readOnlyCopyValidation);
     };
@@ -171,7 +177,10 @@ const TextInput = forwardRef(
     };
 
     const passwordToggle =
-      showPasswordToggle && typeProp === 'password' && !readOnlyCopy;
+      !!showPasswordToggle && typeProp === 'password' && !readOnlyCopy;
+    const inlineCopyButton = !!showCopyButton && !readOnlyCopy;
+    const inlineButtonCount = Number(passwordToggle) + Number(inlineCopyButton);
+    const hasButton = readOnlyCopy || inlineButtonCount > 0;
 
     useEffect(() => {
       // When the toggle stops applying, return the input to its authored type.
@@ -524,6 +533,19 @@ const TextInput = forwardRef(
       />
     );
 
+    const InlineCopyButton = inlineCopyButton ? (
+      <CopyButton
+        // Standalone copy can target a masked or transient secret, so the
+        // control label should not expose the rendered input value.
+        ariaLabel={readOnlyCopyPrompt}
+        disabled={disabled}
+        onBlurCopy={onBlurCopy}
+        onClickCopy={onClickCopy}
+        readOnlyCopyPrompt={readOnlyCopyPrompt}
+        tip={tip}
+      />
+    ) : undefined;
+
     const PasswordToggleButton = passwordToggle ? (
       <Button
         disabled={disabled}
@@ -538,10 +560,16 @@ const TextInput = forwardRef(
     ) : undefined;
 
     const textInputButton = readOnlyCopy ? ReadOnlyCopyButton : undefined;
+    const textInputInlineButtons = inlineButtonCount ? (
+      <StyledInlineButton {...passThemeFlag}>
+        {PasswordToggleButton}
+        {InlineCopyButton}
+      </StyledInlineButton>
+    ) : undefined;
 
     return (
       <StyledTextInputContainer
-        hasButton={!!textInputButton}
+        hasButton={hasButton}
         readOnlyProp={readOnly} // readOnlyProp to avoid passing to DOM
         readOnlyCopy={readOnlyCopy}
         plain={plain}
@@ -576,8 +604,8 @@ const TextInput = forwardRef(
             icon={!readOnlyCopy && icon}
             reverse={reverse}
             focus={focus}
-            hasButton={!!textInputButton}
-            hasInlineButton={passwordToggle}
+            hasButton={hasButton}
+            inlineButtonCount={inlineButtonCount}
             focusIndicator={focusIndicator}
             textAlign={textAlign}
             type={inputType}
@@ -639,11 +667,7 @@ const TextInput = forwardRef(
             }
           />
         </Keyboard>
-        {PasswordToggleButton && !readOnlyCopy && (
-          <StyledInlineButton {...passThemeFlag}>
-            {PasswordToggleButton}
-          </StyledInlineButton>
-        )}
+        {textInputInlineButtons}
         {!reverse && textInputButton}
         {!readOnly && drop}
       </StyledTextInputContainer>

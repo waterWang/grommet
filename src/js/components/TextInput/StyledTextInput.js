@@ -27,17 +27,19 @@ const getInputIconPad = (props) => {
 };
 
 const getInlineButtonPad = (props) => {
+  const buttonCount = props.inlineButtonCount || 1;
   const rightInset = parseMetricToNum(getInputPadBySide(props, 'right'));
   const iconPad = parseMetricToNum(getInputIconPad(props));
-  // Reserve both the icon space and the control's edge inset so text clears
-  // the flush-right password toggle.
-  return `${iconPad + rightInset}px`;
+  // Reserve space for each inline control plus the input edge inset so text
+  // clears the trailing action rail.
+  return `${buttonCount * iconPad + rightInset}px`;
 };
 
 const getPlainStyle = (plain) => {
   if (plain === 'full') {
     return css`
-      ${plainInputStyle} padding: 0;
+      ${plainInputStyle};
+      padding: 0;
     `;
   }
   return plain && plainInputStyle;
@@ -56,7 +58,9 @@ const StyledTextInput = styled.input.withConfig(styledComponentsConfig)`
   ${(props) => getPlainStyle(props.plain)}
   ${(props) => props.icon && inputPadForIcon}
   ${(props) =>
-    props.hasInlineButton && `padding-right: ${getInlineButtonPad(props)};`}
+    props.inlineButtonCount > 0
+      ? `padding-right: ${getInlineButtonPad(props)};`
+      : ''}
   ${(props) =>
     props.disabled &&
     disabledStyle(

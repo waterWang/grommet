@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: © Hewlett Packard Enterprise Development LP
+// SPDX-License-Identifier: Apache-2.0
 import React from 'react';
 import 'jest-styled-components';
 import 'regenerator-runtime/runtime';
@@ -105,6 +107,77 @@ describe('TextInput', () => {
     await user.click(screen.getByRole('button', { name: 'Show password' }));
 
     expect(screen.getByLabelText('Add')).toBeInTheDocument();
+  });
+
+  test('supports copy button without forcing readOnly', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <Grommet>
+        <TextInput aria-label="Secret" value="test" showCopyButton />
+      </Grommet>,
+    );
+
+    const input = screen.getByLabelText('Secret');
+    expect(input).not.toHaveAttribute('readonly');
+
+    await user.click(screen.getByRole('button', { name: 'Copy to clipboard' }));
+
+    const clipboardText = await navigator.clipboard.readText();
+    expect(clipboardText).toBe('test');
+  });
+
+  test('supports custom copy callback', async () => {
+    const user = userEvent.setup();
+    const onClickCopy = jest.fn(() => navigator.clipboard.writeText('secret'));
+
+    render(
+      <Grommet>
+        <TextInput
+          aria-label="Secret"
+          onClickCopy={onClickCopy}
+          showCopyButton
+          value="masked"
+        />
+      </Grommet>,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Copy to clipboard' }));
+
+    expect(onClickCopy).toHaveBeenCalledTimes(1);
+    const clipboardText = await navigator.clipboard.readText();
+    expect(clipboardText).toBe('secret');
+  });
+
+  test('supports copy button with password toggle', async () => {
+    const user = userEvent.setup();
+    const onClickCopy = jest.fn();
+
+    render(
+      <Grommet>
+        <TextInput
+          aria-label="Password"
+          onClickCopy={onClickCopy}
+          showCopyButton
+          showPasswordToggle
+          type="password"
+          value="masked"
+        />
+      </Grommet>,
+    );
+
+    expect(screen.getByLabelText('Password')).toHaveAttribute(
+      'type',
+      'password',
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Show password' }));
+
+    expect(screen.getByLabelText('Password')).toHaveAttribute('type', 'text');
+
+    await user.click(screen.getByRole('button', { name: 'Copy to clipboard' }));
+
+    expect(onClickCopy).toHaveBeenCalledTimes(1);
   });
 
   test('suggestions', (done) => {

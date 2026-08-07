@@ -54,6 +54,7 @@ export interface TextInputProps
     suggestionIsOpen?: string;
   };
   name?: string;
+  onClickCopy?: () => void | Promise<void>;
   onSelect?: (x: {
     target: React.RefObject<HTMLElement | null>['current'];
     suggestion: any;
@@ -66,6 +67,7 @@ export interface TextInputProps
   onSuggestionsClose?: () => void;
   placeholder?: string | React.ReactNode;
   plain?: boolean | 'full';
+  showCopyButton?: boolean;
   showPasswordToggle?: boolean;
   readOnlyCopy?: boolean;
   reverse?: boolean;
