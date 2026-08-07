@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: © Hewlett Packard Enterprise Development LP
+// SPDX-License-Identifier: Apache-2.0
 import React from 'react';
 
 import { Box, TextInput } from 'grommet';
@@ -10,6 +12,7 @@ export const Password = () => {
     // <Grommet theme={...}>
     <Box width="medium" margin="large">
       <TextInput
+        showCopyButton
         type="password"
         showPasswordToggle
         value={value}
